@@ -4,7 +4,7 @@ import morphology
 import orthography
 
 # user_input defined here for now, will be properly integrated in future versions
-user_input = "tulkun"
+user_input = "frayhilvan faypay paypay fayfay payfay"
 response = requests.get("https://reykunyu.wimiso.nl/api/fwew?t%C3%ACpawm=" + user_input).json()
 
 
@@ -72,7 +72,7 @@ def build_dict():
             if part_speech in infix_possible:
                 morphology.get_verb_affixes(word_answers, inner_dict)
             elif part_speech in prefix_suffix_possible:
-                morphology.get_other_affixes(word_answers, inner_dict)
+                morphology.get_other_affixes(word_input, word_answers, inner_dict)
 
             # Grab Reef spelling
             word_reef = orthography.get_reef_spelling(word_syllables, word_stress)
@@ -82,7 +82,7 @@ def build_dict():
 
             # Update stress to reflect affixes
             if inner_dict["aff:pre"] is not None:
-                morphology.update_other_stress(inner_dict)
+                morphology.update_other_stress(word_input, inner_dict)
             elif inner_dict["aff:in"] is not None:
                 morphology.update_verb_stress(inner_dict)
 

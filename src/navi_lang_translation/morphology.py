@@ -3,8 +3,23 @@ vlist = ["a", "e", "i", "o", "u", "ä", "é", "ì", "ù"]
 pvlist = ["ll", "rr"]
 
 
-def break_into_syllables():
-    pass
+def apply_lenition(word_to_lenite):
+    leniting_sounds = {"px": "p", "tx": "t", "kx": "k", "p": "f", "t": "s", "k": "h", "ts": "s", "'": ""}
+    processed_word = word_to_lenite
+
+    # Correct early return for special cases
+    if word_to_lenite.startswith("'rr") or word_to_lenite.startswith("'ll"):
+        return processed_word
+    else:
+        for key, value in leniting_sounds.items():
+            if word_to_lenite.startswith(key):
+                if len(key) == 2:
+                    processed_word = value + word_to_lenite[2:]
+                else:
+                    processed_word = value + word_to_lenite[1:]
+                break
+        return processed_word
+
 
 
 def get_verb_affixes(api_data, inner_dictionary):
@@ -28,7 +43,9 @@ def get_verb_affixes(api_data, inner_dictionary):
     inner_dictionary["infix loc."] = word_infixloc if word_infixloc else None
 
 
-def get_other_affixes(api_data, inner_dictionary):
+def get_other_affixes(input_word, api_data, inner_dictionary):
+    root_lenited = ""
+    post_prefix_index = -1
     # Initialize lists for prefixes and suffixes
     aff_pre = []
     aff_suf = []
@@ -45,20 +62,60 @@ def get_other_affixes(api_data, inner_dictionary):
             affix = affix_navi.get("na'vi")
             if affix_type == "aff:pre" or affix_type == "aff:pre:len":
                 aff_pre.append(affix)
-            elif affix_type == "aff:suf" or affix_type == "adp":
+            elif affix_type == "aff:suf" or affix_type == "adp" or affix_type == "adp:len":
                 aff_suf.append(affix)
+
+        # Check for the prefixes "kaw", "sna", and "munsna", which are not detected by the API
+        # Account for below input words where the prefixes might be the same substring as the root
+        if input_word != "paypay" or "faypay" or "payfay" or "fayfay":
+            root_lenited = apply_lenition(inner_dictionary["root"])
+            post_prefix_index = input_word.find(root_lenited)
+        else:
+            post_prefix_index = -1
+        # Make sure a prefix substring exists
+        if post_prefix_index != -1:
+            prefix_substring = input_word[:post_prefix_index]
+            if "kaw" in prefix_substring:
+                aff_pre.append("kaw")
+            if "munsna" in prefix_substring:
+                aff_pre.append("munsna")
+            elif "sna" in prefix_substring:
+                aff_pre.append("sna")
 
     # Update the inner dictionary directly
     inner_dictionary["aff:pre"] = aff_pre if aff_pre else None
     inner_dictionary["aff:suf"] = aff_suf if aff_suf else None
 
 
-def update_other_stress(inner_dictionary):
+def update_other_stress(input_word, inner_dictionary):
     prefixes = inner_dictionary["aff:pre"]
+    root_lenited = ""
+    post_prefix_index = -1
     # Initialize counters for vlist and pvlist matches
     vlist_count = 0
     pvlist_count = 0
     stress_shift = 0
+
+    # Account for a lower stress number if a combination prefix is used
+    # Find the index where the root begins (post prefixes) in the input_word
+    if inner_dictionary["root"] != "pay":
+        if any(prefix in ["pe", "me", "pxe", "ay"] for prefix in prefixes):
+            root_lenited = apply_lenition(inner_dictionary["root"])
+            post_prefix_index = input_word.find(root_lenited)
+    # Account for input words "paypay"*, "faypay"*, "payfay", and "fayfay" where the prefixes might be the same substring as the root
+    elif (inner_dictionary["root"] == "pay"):
+        if "ay" in prefixes and any(prefix in ["pe", "fì"] for prefix in prefixes):
+            post_prefix_index = 3
+
+    # Make sure a prefix substring exists
+    if post_prefix_index != -1:
+        # Logic to test for combination prefixes
+        combination_prefixes = any(combination in input_word[:post_prefix_index] \
+                for combination in ["pem", "pep", "pay", "fay", "tsay", "fray"])
+        has_combination_prefixes = any(all(x in prefixes for x in pair) \
+                for pair in [("pe", "me"), ("pe", "pxe"), ("pe", "ay"), ("fì", "ay"), ("tsa", "ay"), ("fra", "ay")])
+        if combination_prefixes and has_combination_prefixes:
+            stress_shift -= 1
 
     # Make updates to the stress shift number based on prefix syllables (identified by counting vowels/pseudovowels)
     for prefix in prefixes:
