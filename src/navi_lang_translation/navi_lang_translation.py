@@ -4,7 +4,7 @@ import morphology
 import orthography
 
 # user_input defined here for now, will be properly integrated in future versions
-user_input = "frayhilvan faypay paypay fayfay payfay"
+user_input = "kilvan kizam"
 response = requests.get("https://reykunyu.wimiso.nl/api/fwew?t%C3%ACpawm=" + user_input).json()
 
 
@@ -85,6 +85,12 @@ def build_dict():
                 morphology.update_other_stress(word_input, inner_dict)
             elif inner_dict["aff:in"] is not None:
                 morphology.update_verb_stress(inner_dict)
+        else:
+            number = morphology.check_for_valid_number1(word_input)
+            if number != []:
+                print(f"{word_input} may be a number word: ")
+                print(number)
+                print()
 
         nested_dict[word_input] = inner_dict
 

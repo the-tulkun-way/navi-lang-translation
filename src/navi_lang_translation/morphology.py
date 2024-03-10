@@ -200,3 +200,180 @@ def update_verb_stress(inner_dictionary):
 
     # Update the inner dictionary directly
     inner_dictionary["stress"] += stress_shift
+
+
+# Takes every substring and its information from substring_search() and returns a list of lists with
+# only combinations of substrings that do not overlap or leave gaps and match the length of the main_string
+def find_combinations(positions_list, word, current_combination=None, last_end_index=0, combos=None):
+    word_length = len(word)
+    
+    if combos is None:
+        combos = []
+    if current_combination is None:
+        current_combination = []
+
+    for position in positions_list:
+        start_index, end_index, _, _ = position
+        # If starting a new combination, ensure the first entry starts at index 0
+        if not current_combination and start_index != 0:
+            continue  # Skip this position as it cannot start a new combination
+        # Ensure the next tuple starts immediately after the last tuple in the combination
+        elif start_index == last_end_index + 1 or (not current_combination and start_index == 0):
+            new_combination = current_combination + [position]
+            combos.append(new_combination)
+            # Recurse with the updated current combination and the new last end index
+            find_combinations(positions_list, word, new_combination, end_index, combos)
+
+    # Filter combinations that don't end at the last character of the string
+    combos = [entry for entry in combos if entry[-1][1] == word_length - 1]
+
+    return combos
+
+
+# Gathers every found substring in the main_string and relevant data for each instance
+def substring_search(word, substring_dict):
+    # Check which keys fit inside other keys
+    positions = []
+    for key in substring_dict:
+        # Create a list of tuples to record the indices where each substring is found in the main string
+        start = 0  # Start at the beginning of the string
+        while True:
+            # Use find to locate the substring, starting from 'start'
+            start = word.find(key, start)
+            if start == -1:  # No more instances found
+                break
+            # (starting index, ending index, substring found, valid positions of substring)
+            new_tuple = (start, start + (len(key) - 1), key, substring_dict[key])
+            positions.append(new_tuple)
+            start += 1  # Move to the next position for the next search
+
+    # Sorting the lists of tuples in place based on the first item of each tuple
+    positions.sort(key=lambda x: x[0])
+    # If no substrings were detected at the beginning of main_string, return an empty list
+    if positions == [] or positions[0][0] > 0:
+        return []
+    else:
+        return find_combinations(positions, word)
+
+
+def check_for_valid_number2(lst, suffix):
+    strings_to_check = ['zazam', 'zaza', 'vozam', 'voza', 'zam', 'za', 'vol', 'vo']
+
+    # Track the last found index to ensure the order is correct
+    last_found_index = -1
+
+    # Check for issues with "vol" and "vo"
+    # "Vol" and "vo" are both present
+    if "vol" in lst and "vo" in lst:
+        return False
+    # "Vol" is in the list, but the suffix isn't "aw" or "vol" itself
+    elif "vol" in lst and (suffix != "aw" and suffix != "vol"):
+        return False
+    # "Vo" is in the list, but the suffix is "aw" or "vo" itself
+    elif "vo" in lst and (suffix == "aw" or suffix == "vo"):
+        return False
+    # Check for issues with "zazam" and "zaza"
+    # "Zazam" and "zaza" are both present
+    elif "zazam" in lst and "zaza" in lst:
+        return False
+    # "Zaza" is in the list, but it isn't the suffix itself
+    elif "zaza" in lst and suffix != "zaza":
+        return False
+    # Check for issues with "vozam" and "voza"
+    # "Vozam" and "voza" are both present
+    elif "vozam" in lst and "voza":
+        return False
+    # "Voza" is in the list, but it isn't the suffix itself
+    elif "voza" in lst and suffix != "voza":
+        return False
+    # Check for issues with "zam" and "za"
+    # "Zam" and "za" are both present
+    elif "zam" in lst and "za" in lst:
+        return False
+    # "Za" is in the list, but it isn't the suffix itself
+    elif "za" in lst and suffix != "za":
+        return False
+
+    for item in lst:
+        if item in strings_to_check:
+            current_index = strings_to_check.index(item)
+
+            # Check if the current item appears after the last found item in strings_to_check
+            if current_index <= last_found_index:
+                # The current item is out of order
+                return False
+            else:
+                # Update last_found_index to current item's index
+                last_found_index = current_index
+
+    return True
+
+
+def check_for_valid_number1(input_word):
+    dict_of_substrings = {"vo": ["power"],
+                      "vol": ["power", "dep_suffix"],
+                      "zam": ["power"],
+                      "za": ["power", "dep_suffix"],
+                      "vozam": ["power"],
+                      "voza": ["power", "dep_suffix"],
+                      "zazam": ["power"],
+                      "zaza": ["power", "dep_suffix"],
+                      "me": ["prefix"],
+                      "pxe": ["prefix"],
+                      "be": ["prefix"],
+                      "tsì": ["prefix"],
+                      "mrr": ["prefix", "base_suffix", "dep_suffix"],
+                      "pu": ["prefix"],
+                      "ki": ["prefix"],
+                      "aw": ["base_suffix", "dep_suffix"],
+                      "mun": ["base_suffix"],
+                      "pey": ["base_suffix", "dep_suffix"],
+                      "sìng": ["base_suffix"],
+                      "fu": ["base_suffix", "dep_suffix"],
+                      "hin": ["base_suffix"],
+                      "mu": ["dep_suffix"],
+                      "sì": ["dep_suffix"],
+                      "hi": ["dep_suffix"]}
+
+    combinations = substring_search(input_word, dict_of_substrings)
+    filtered_combinations = []
+    last_was_power = False
+
+    for list_of_tuples in combinations:
+        n_tuples = len(list_of_tuples)
+        is_valid = True  # Flag to track validity of the current list_of_tuples
+        list_of_powers = []
+
+        for index, item in enumerate(list_of_tuples):
+            # Check if this tuple contains 'prefix'
+            if 'prefix' in item[3]:
+                # If it's not the first tuple and the last tuple didn't contain 'power', continue
+                if index > 0 and not last_was_power:
+                    is_valid = False
+                    break  # Exit the loop early since this list fails the check
+                # If it's the last tuple, continue
+                elif index == n_tuples - 1:
+                    is_valid = False
+                    break
+
+            # If substring is a suffix but not in the final tuple, continue
+            if ("base_suffix" in item[3] or "dep_suffix" in item[3]) and (index != n_tuples - 1):
+                is_valid = False
+                break
+
+            # Update last_was_power flag for next iteration
+            last_was_power = 'power' in item[3]
+
+            if "power" in item[3]:
+                list_of_powers.append(item[2])
+
+        # If is_valid is False, the current list_of_tuples failed checks, so skip it
+        if not is_valid:
+            continue
+
+        # If all conditions met so far, check that each present power is in the correct order
+        suffix = list_of_tuples[-1][2]
+        if check_for_valid_number2(list_of_powers, suffix):
+            filtered_combinations.append(list_of_tuples)
+
+    return filtered_combinations
