@@ -206,7 +206,7 @@ def update_verb_stress(inner_dictionary):
 # only combinations of substrings that do not overlap or leave gaps and match the length of the main_string
 def find_combinations(positions_list, word, current_combination=None, last_end_index=0, combos=None):
     word_length = len(word)
-    
+
     if combos is None:
         combos = []
     if current_combination is None:
@@ -231,6 +231,7 @@ def find_combinations(positions_list, word, current_combination=None, last_end_i
 
 
 # Gathers every found substring in the main_string and relevant data for each instance
+# Needs the input word and the dictionary of substrings
 def substring_search(word, substring_dict):
     # Check which keys fit inside other keys
     positions = []
@@ -250,12 +251,14 @@ def substring_search(word, substring_dict):
     # Sorting the lists of tuples in place based on the first item of each tuple
     positions.sort(key=lambda x: x[0])
     # If no substrings were detected at the beginning of main_string, return an empty list
+    combos = find_combinations(positions, word)
     if positions == [] or positions[0][0] > 0:
         return []
     else:
         return find_combinations(positions, word)
 
 
+#  This function takes a list of powers and the suffix substring and performs check to ensure that the power words are valid
 def check_for_valid_number2(lst, suffix):
     strings_to_check = ['zazam', 'zaza', 'vozam', 'voza', 'zam', 'za', 'vol', 'vo']
 
@@ -265,34 +268,34 @@ def check_for_valid_number2(lst, suffix):
     # Check for issues with "vol" and "vo"
     # "Vol" and "vo" are both present
     if "vol" in lst and "vo" in lst:
-        return False
+        return [False, 5]
     # "Vol" is in the list, but the suffix isn't "aw" or "vol" itself
     elif "vol" in lst and (suffix != "aw" and suffix != "vol"):
-        return False
+        return [False, 6]
     # "Vo" is in the list, but the suffix is "aw" or "vo" itself
     elif "vo" in lst and (suffix == "aw" or suffix == "vo"):
-        return False
+        return [False, 7]
     # Check for issues with "zazam" and "zaza"
     # "Zazam" and "zaza" are both present
     elif "zazam" in lst and "zaza" in lst:
-        return False
+        return [False, 8]
     # "Zaza" is in the list, but it isn't the suffix itself
     elif "zaza" in lst and suffix != "zaza":
-        return False
+        return [False, 9]
     # Check for issues with "vozam" and "voza"
     # "Vozam" and "voza" are both present
-    elif "vozam" in lst and "voza":
-        return False
+    elif "vozam" in lst and "voza" in lst:
+        return [False, 10]
     # "Voza" is in the list, but it isn't the suffix itself
     elif "voza" in lst and suffix != "voza":
-        return False
+        return [False, 11]
     # Check for issues with "zam" and "za"
     # "Zam" and "za" are both present
     elif "zam" in lst and "za" in lst:
-        return False
+        return [False, 12]
     # "Za" is in the list, but it isn't the suffix itself
     elif "za" in lst and suffix != "za":
-        return False
+        return [False, 13]
 
     for item in lst:
         if item in strings_to_check:
@@ -301,39 +304,39 @@ def check_for_valid_number2(lst, suffix):
             # Check if the current item appears after the last found item in strings_to_check
             if current_index <= last_found_index:
                 # The current item is out of order
-                return False
+                return [False, 14]
             else:
                 # Update last_found_index to current item's index
                 last_found_index = current_index
 
-    return True
+    return [True, 0]
 
 
 def check_for_valid_number1(input_word):
     dict_of_substrings = {"vo": ["power"],
-                      "vol": ["power", "dep_suffix"],
-                      "zam": ["power"],
-                      "za": ["power", "dep_suffix"],
-                      "vozam": ["power"],
-                      "voza": ["power", "dep_suffix"],
-                      "zazam": ["power"],
-                      "zaza": ["power", "dep_suffix"],
-                      "me": ["prefix"],
-                      "pxe": ["prefix"],
-                      "be": ["prefix"],
-                      "tsì": ["prefix"],
-                      "mrr": ["prefix", "base_suffix", "dep_suffix"],
-                      "pu": ["prefix"],
-                      "ki": ["prefix"],
-                      "aw": ["base_suffix", "dep_suffix"],
-                      "mun": ["base_suffix"],
-                      "pey": ["base_suffix", "dep_suffix"],
-                      "sìng": ["base_suffix"],
-                      "fu": ["base_suffix", "dep_suffix"],
-                      "hin": ["base_suffix"],
-                      "mu": ["dep_suffix"],
-                      "sì": ["dep_suffix"],
-                      "hi": ["dep_suffix"]}
+                          "vol": ["power", "dep_suffix"],
+                          "zam": ["power"],
+                          "za": ["power", "dep_suffix"],
+                          "vozam": ["power"],
+                          "voza": ["power", "dep_suffix"],
+                          "zazam": ["power"],
+                          "zaza": ["power", "dep_suffix"],
+                          "me": ["prefix"],
+                          "pxe": ["prefix"],
+                          "be": ["prefix"],
+                          "tsì": ["prefix"],
+                          "mrr": ["prefix", "base_suffix", "dep_suffix"],
+                          "pu": ["prefix"],
+                          "ki": ["prefix"],
+                          "aw": ["base_suffix", "dep_suffix"],
+                          "mun": ["base_suffix"],
+                          "pey": ["base_suffix", "dep_suffix"],
+                          "sìng": ["base_suffix"],
+                          "fu": ["base_suffix", "dep_suffix"],
+                          "hin": ["base_suffix"],
+                          "mu": ["dep_suffix"],
+                          "sì": ["dep_suffix"],
+                          "hi": ["dep_suffix"]}
 
     combinations = substring_search(input_word, dict_of_substrings)
     filtered_combinations = []
@@ -341,39 +344,62 @@ def check_for_valid_number1(input_word):
 
     for list_of_tuples in combinations:
         n_tuples = len(list_of_tuples)
-        is_valid = True  # Flag to track validity of the current list_of_tuples
+        is_valid = [True, 0]  # Flag to track validity of the current list_of_tuples
         list_of_powers = []
 
         for index, item in enumerate(list_of_tuples):
-            # Check if this tuple contains 'prefix'
-            if 'prefix' in item[3]:
-                # If it's not the first tuple and the last tuple didn't contain 'power', continue
-                if index > 0 and not last_was_power:
-                    is_valid = False
-                    break  # Exit the loop early since this list fails the check
-                # If it's the last tuple, continue
-                elif index == n_tuples - 1:
-                    is_valid = False
+            # Check for the first tuple
+            # First substring isn't a prefix
+            if index == 0 and ("prefix" not in item[3] and "power" not in item[3]):
+                is_valid = [False, 1]
+                break
+
+            # Check for middle tuples
+            if 0 < index < n_tuples - 1:
+                # Substring isn't a prefix or a power
+                if "prefix" not in item[3] and "power" not in item[3]:
+                    is_valid = [False, 2]
+                    break
+                # Substring is a prefix following a substring that isn't a power
+                elif "prefix" in item[3] and "power" not in item[3] and not last_was_power:
+                    is_valid = [False, 3]
                     break
 
-            # If substring is a suffix but not in the final tuple, continue
-            if ("base_suffix" in item[3] or "dep_suffix" in item[3]) and (index != n_tuples - 1):
-                is_valid = False
+            # Check for the final tuple
+            # Last substring isn't a suffix
+            if (index == n_tuples - 1 and
+                    ("base_suffix" not in item[3] and "dep_suffix" not in item[3] and "power" not in item[3])):
+                is_valid = [False, 4]
+                break
+
+            # Only powers can be standalone
+            if n_tuples == 1 and "power" not in item[3]:
+                is_valid = [False, 15]
+                break
+
+            # "prefix" + "suffix" is not a valid combination
+            if n_tuples >= 2 and index == n_tuples - 1 and\
+                    ("base_suffix" in item[3] or "dep_suffix" in item[3]) \
+                    and "power" not in item[3] and not last_was_power:
+                is_valid = [False, 16]
                 break
 
             # Update last_was_power flag for next iteration
-            last_was_power = 'power' in item[3]
+            last_was_power = "power" in item[3]
 
             if "power" in item[3]:
                 list_of_powers.append(item[2])
 
         # If is_valid is False, the current list_of_tuples failed checks, so skip it
-        if not is_valid:
+        if not is_valid[0]:
+            print(input_word)
+            print(f"Flag tripped: {is_valid}")
             continue
 
         # If all conditions met so far, check that each present power is in the correct order
         suffix = list_of_tuples[-1][2]
-        if check_for_valid_number2(list_of_powers, suffix):
+        check2 = check_for_valid_number2(list_of_powers, suffix)
+        if check2[0]:
             filtered_combinations.append(list_of_tuples)
 
     return filtered_combinations
